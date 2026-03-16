@@ -476,7 +476,7 @@ if not isCloudEdit then
 					gangnam = "rbxassetid://2136",
 					gmod = "rbxassetid://2140",
 					cryforme = "rbxassetid://3239",
-					jumpstyle = "rbxassetid://7454"
+					jumpstyle = "rbxassetid://7455"
 				}
 
 				if state == "play" then
