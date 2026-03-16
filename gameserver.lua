@@ -16,7 +16,7 @@ pcall(function() settings().Diagnostics:LegacyScriptMode() end)
 local shouldCountDown = true
 local countdownTimer = 15
 
-local commands = {";ec", ";cock", ";raymonf", ";gage", ";minecraft", ";suicide", ";energycell", ";cancer", ";bleach", ";sex", ";kms", ";death", ";robloxsuckingpenis", ";korone", ";liam", ";amir", ";brickplanet", ";polytoriacrashed"}
+local commands = {";ec", ";cock", ";raymonf", ";gage", ";minecraft", ";suicide", ";energycell", ";cancer", ";bleach", ";sex", ";kms", ";death", ";robloxsuckingpenis", ";korone", ";liam", ";amir", ";brickplanet", ";polytoriacrashed", ";wm"}
 
 local ecSounds = {
 	1991,
@@ -31,6 +31,15 @@ function onChatted(msg, speaker)
     local source = string.lower(speaker.Name)
     local msg = string.lower(msg)
 	local player = speaker
+	
+	if not speaker.Character then return end
+	local humanoid = speaker.Character:FindFirstChild("Humanoid")
+	if not humanoid then return end
+	if msg == "!!!reset" then
+		humanoid.Health = 0
+		return
+	end
+	
     for i=1,#commands do
         if msg == commands[i] and speaker.Character.Humanoid.Health > 0 then
             speaker.Character.Humanoid.Health = 0
@@ -476,7 +485,8 @@ if not isCloudEdit then
 					gangnam = "rbxassetid://2136",
 					gmod = "rbxassetid://2140",
 					cryforme = "rbxassetid://3239",
-					jumpstyle = "rbxassetid://7455"
+					jumpstyle = "rbxassetid://7455",
+					awesomeface = "rbxassetid://7500"
 				}
 
 				if state == "play" then
