@@ -3,6 +3,7 @@ local placeId, port, sleeptime, access, timeout, machineAddress, baseUrl, librar
 {placeId}, {port}, 10, "{accesskey}", 10, "37.114.46.52", "lambda.cam", 37801172, {placeId}, "arl", "http://", "{jobId}", false
 
 -----------------------------------"CUSTOM" SHARED CODE----------------------------------
+local TeleportService = game:GetService("TeleportService")
 
 pcall(function() settings().Network.UseInstancePacketCache = true end)
 pcall(function() settings().Network.UsePhysicsPacketCache = true end)
@@ -16,7 +17,7 @@ pcall(function() settings().Diagnostics:LegacyScriptMode() end)
 local shouldCountDown = true
 local countdownTimer = 15
 
-local commands = {";ec", ";cock", ";raymonf", ";gage", ";minecraft", ";suicide", ";energycell", ";cancer", ";bleach", ";sex", ";kms", ";death", ";robloxsuckingpenis", ";korone", ";liam", ";amir", ";brickplanet", ";polytoriacrashed", ";wm"}
+local commands = {";ec", ";cock", ";raymonf", ";gage", ";minecraft", ";suicide", ";energycell", ";cancer", ";bleach", ";sex", ";kms", ";death", ";robloxsuckingpenis", ";korone", ";austiblox", ";pekora", ";liam", ";amir", ";brickplanet", ";polytoriacrashed", ";wm"}
 local elivSound = 7569
 local ecSounds = {
 	1991,
@@ -31,6 +32,11 @@ function onChatted(msg, speaker)
     local source = string.lower(speaker.Name)
     local msg = string.lower(msg)
 	local player = speaker
+	
+		if msg == "!rejoin" then
+		TeleportService:Teleport(placeId, speaker)
+		return
+	end
 	
 	if not speaker.Character then return end
 	local humanoid = speaker.Character:FindFirstChild("Humanoid")
