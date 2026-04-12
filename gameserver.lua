@@ -68,7 +68,7 @@ local function onChatted(msg, speaker)
 		sound:Play()
 	end
 
-	if Players:FindFirstChild("ArbysChibkenEnabled") then
+	if game:GetService("Players").ArbysChibkenEnabled then
 		if msg == "arbys chibken" then
 			local sound = Instance.new("Sound")
 			sound.SoundId = "rbxassetid://327"
