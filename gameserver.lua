@@ -4,6 +4,7 @@ local placeId, port, sleeptime, access, timeout, machineAddress, baseUrl, librar
 
 -----------------------------------"CUSTOM" SHARED CODE----------------------------------
 local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
 
 pcall(function() settings().Network.UseInstancePacketCache = true end)
 pcall(function() settings().Network.UsePhysicsPacketCache = true end)
@@ -18,67 +19,80 @@ local shouldCountDown = true
 local countdownTimer = 15
 
 local commands = {";ec", ";cock", ";raymonf", ";gage", ";minecraft", ";suicide", ";energycell", ";cancer", ";bleach", ";sex", ";kms", ";death", ";robloxsuckingpenis", ";korone", ";austiblox", ";pekora", ";liam", ";amir", ";brickplanet", ";polytoriacrashed", ";wm"}
-local elivSound = 7569
-local ecSounds = {
-	1991,
-	1993,
-	1995,
-	1723,
-	1725,
-	1735
-}
 
-function onChatted(msg, speaker)
-    local source = string.lower(speaker.Name)
-    local msg = string.lower(msg)
-	local player = speaker
-	
-		if msg == "!rejoin" then
-		TeleportService:Teleport(placeId, speaker)
+local elivSound = 7569
+local ecSounds = {1991,1993,1995,1723,1725,1735}
+
+local function onChatted(msg, speaker)
+	msg = string.lower(msg)
+
+	local character = speaker.Character
+	if not character then return end
+
+	local humanoid = character:FindFirstChild("Humanoid")
+	local head = character:FindFirstChild("Head")
+	if not humanoid or not head then return end
+
+	if msg == "!rejoin" then
+		spawn(function()
+			wait(0.2)
+			TeleportService:Teleport(game.PlaceId, speaker)
+		end)
 		return
 	end
-	
-	if not speaker.Character then return end
-	local humanoid = speaker.Character:FindFirstChild("Humanoid")
-	if not humanoid then return end
+
 	if msg == "!!!reset" then
 		humanoid.Health = 0
 		return
 	end
-	
-    for i=1,#commands do
-        if msg == commands[i] and speaker.Character.Humanoid.Health > 0 then
-            speaker.Character.Humanoid.Health = 0
-            local sound = Instance.new("Sound")
-            sound.Parent = game.Workspace:FindFirstChild(speaker.Name).Head
-            sound.SoundId = protocol .. "arl." .. baseUrl .. "/asset/?id=" .. ecSounds[math.random(1, #ecSounds)]
-            wait(0.2)
-            sound:Play()
-        end
-    end
-	-- coded by skylerclock
-	if msg == ";eliv" and speaker.Character.Humanoid.Health > 0 then
-		speaker.Character.Humanoid.Health = 0
+
+	for i = 1, #commands do
+		if msg == commands[i] and humanoid.Health > 0 then
+			humanoid.Health = 0
+
+			local sound = Instance.new("Sound")
+			sound.Parent = head
+			sound.SoundId = protocol .. "arl." .. baseUrl .. "/asset/?id=" .. ecSounds[math.random(1, #ecSounds)]
+			wait(0.2)
+			sound:Play()
+		end
+	end
+
+	if msg == ";eliv" and humanoid.Health > 0 then
+		humanoid.Health = 0
+
 		local sound = Instance.new("Sound")
-		sound.Parent = speaker.Character.Head
+		sound.Parent = head
 		sound.SoundId = protocol .. "arl." .. baseUrl .. "/asset/?id=" .. elivSound
 		wait(0.2)
 		sound:Play()
 	end
-	if game:GetService("Players").ArbysChibkenEnabled then
+
+	if Players:FindFirstChild("ArbysChibkenEnabled") then
 		if msg == "arbys chibken" then
 			local sound = Instance.new("Sound")
 			sound.SoundId = "rbxassetid://327"
 			sound.Volume = 0.5
-			sound.Parent = speaker.Character
+			sound.Parent = character
 			sound:Play()
+
 			wait(2)
-			local explosion = Instance.new("Explosion")
-			explosion.Position = speaker.Character.Torso.Position
-			explosion.Parent = speaker.Character.Torso
+
+			local torso = character:FindFirstChild("Torso")
+			if torso then
+				local explosion = Instance.new("Explosion")
+				explosion.Position = torso.Position
+				explosion.Parent = workspace
+			end
 		end
 	end
 end
+
+Players.PlayerAdded:connect(function(player)
+	player.Chatted:connect(function(msg)
+		onChatted(msg, player)
+	end)
+end)
 
 if (placeId == 3724) then
 	warn("Testing enabled")
