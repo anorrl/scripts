@@ -22,7 +22,7 @@ game:GetService("StarterGui").ShowDevelopmentGui = false
 for _, v in pairs(workspace:GetDescendants()) do
 	if v:IsA("Message") or v:IsA("Hint") then
 		v:Remove()
-	else if v:IsA("Humanoid") then
+	elseif v:IsA("Humanoid") then
 		v.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	end
 end
