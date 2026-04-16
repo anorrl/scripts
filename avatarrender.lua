@@ -4,7 +4,8 @@ local userId = {placeId}
 game:GetService("ContentProvider"):SetBaseUrl("http://arl.lambda.cam/")
 game:GetService("ScriptContext").ScriptsDisabled = true
 game:GetService("Lighting").Outlines = false
-game:SetPlaceId(25) -- grace fuck you fix the gears
+
+game:SetPlaceId(19) -- grace fuck you fix the gears
 
 local player = game:GetService("Players"):CreateLocalPlayer(0)
 if (isclothing == true) then
