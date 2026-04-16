@@ -304,7 +304,7 @@ game:GetService("Players").PlayerAdded:connect(function(player)
 		print("Player " .. player.userId .. " added")
 		local userid = string.gsub(tostring(player.userId), "%-", "")
 		userid = string.gsub(tostring(player.userId), "-", "")
-		player.CharacterAppearance = "http://arl.lambda.cam/Asset/CharacterFetch.ashx?userId=" .. userid .. "&placeId=" .. placeId
+		player.CharacterAppearance = "http://{domain}/Asset/CharacterFetch.ashx?userId=" .. userid .. "&placeId=" .. placeId
 		if testing then
 			local allowed = false
 			
