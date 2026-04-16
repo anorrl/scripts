@@ -1,7 +1,7 @@
 local isheadshot = {isheadshot}
 local isclothing = {isclothing}
 local userId = {placeId}
-game:GetService("ContentProvider"):SetBaseUrl("http://arl.lambda.cam/")
+game:GetService("ContentProvider"):SetBaseUrl("http://{domain}/")
 game:GetService("ScriptContext").ScriptsDisabled = true
 game:GetService("Lighting").Outlines = false
 
@@ -9,9 +9,9 @@ game:SetPlaceId(19) -- grace fuck you fix the gears
 
 local player = game:GetService("Players"):CreateLocalPlayer(0)
 if (isclothing == true) then
-	player.CharacterAppearance = "http://arl.lambda.cam/Asset/CharacterFetch.ashx?assetId=" .. userId .. "&access={accesskey}"
+	player.CharacterAppearance = "http://{domain}/Asset/CharacterFetch.ashx?assetId=" .. userId .. "&access={accesskey}"
 else
-	player.CharacterAppearance = "http://arl.lambda.cam/Asset/CharacterFetch.ashx?userId=" .. userId
+	player.CharacterAppearance = "http://{domain}/Asset/CharacterFetch.ashx?userId=" .. userId
 end
 player:LoadCharacter(false)
 

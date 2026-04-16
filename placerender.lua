@@ -1,7 +1,7 @@
 -- Place v1.0.3
 -- added humanoid display remover and startergui remover (probably handled in the showdevgui boolean but oh well)
 
-local assetUrl, fileExtension, x, y, baseUrl, placeId, apiKey = "/asset/?id=", "PNG", 768, 432, "http://arl.lambda.cam", {placeId}, "{accesskey}"
+local assetUrl, fileExtension, x, y, baseUrl, placeId, apiKey = "/asset/?id=", "PNG", 768, 432, "http://{domain}", {placeId}, "{accesskey}"
 
 local ThumbnailGenerator = game:GetService("ThumbnailGenerator")
 
