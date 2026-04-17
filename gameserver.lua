@@ -502,20 +502,19 @@ if not isCloudEdit then
 				emoteSounder:Stop()
 
 				local emoteSounds = { -- grace please consider taking lua classes
-					californiagurls = "rbxassetid://527",
-					dwyec = "rbxassetid://535",
-					caramelldansen = "rbxassetid://533",
-					awakening = "rbxassetid://107",
-					unlockit = "rbxassetid://1316",
-					otsukare = "rbxassetid://1318",
-					hakari = "rbxassetid://1381",
-					mannrobics = "rbxassetid://1383",
-					gangnam = "rbxassetid://2136",
-					gmod = "rbxassetid://2140",
-					cryforme = "rbxassetid://3239",
-					jumpstyle = "rbxassetid://7455",
-					awesomeface = "rbxassetid://7500",
-					creeper = "rbxassetid://7567"
+					californiagurls = "rbxassetid://257",
+					dwyec = "rbxassetid://258",
+					caramelldansen = "rbxassetid://259",
+					awakening = "rbxassetid://261",
+					unlockit = "rbxassetid://260",
+					otsukare = "rbxassetid://262",
+					hakari = "rbxassetid://263",
+					mannrobics = "rbxassetid://264",
+					gangnam = "rbxassetid://265",
+					gmod = "rbxassetid://266",
+					jumpstyle = "rbxassetid://267",
+					awesomeface = "rbxassetid://268",
+					creeper = "rbxassetid://269"
 				}
 				
 				emoteSounds = {}
