@@ -74,7 +74,7 @@ local function onChatted(msg, speaker)
 			local sound = Instance.new("Sound")
 			sound.SoundId = "rbxassetid://256"
 			sound.Volume = 0.5
-			sound.Parent = character
+			sound.Parent = character:WaitForChild("Head")
 			sound:Play()
 
 			wait(2)
@@ -514,10 +514,9 @@ if not isCloudEdit then
 					gmod = "rbxassetid://266",
 					jumpstyle = "rbxassetid://267",
 					awesomeface = "rbxassetid://268",
-					creeper = "rbxassetid://269"
+					creeper = "rbxassetid://269",
+					rampage = "rbxassetid://275"
 				}
-				
-				emoteSounds = {}
 
 				if state == "play" then
 					local soundId = emoteSounds[emoteName]
