@@ -21,8 +21,8 @@ local countdownTimer = 15
 
 local commands = {";ec", ";cock", ";raymonf", ";gage", ";minecraft", ";suicide", ";energycell", ";cancer", ";bleach", ";sex", ";kms", ";death", ";robloxsuckingpenis", ";korone", ";austiblox", ";pekora", ";liam", ";amir", ";brickplanet", ";polytoriacrashed", ";wm"}
 
-local elivSound = 7569
-local ecSounds = {1991,1993,1995,1723,1725,1735}
+local elivSound = 255
+local ecSounds = {63,66,68,252,253,254}
 
 local function onChatted(msg, speaker)
 	msg = string.lower(msg)
@@ -72,7 +72,7 @@ local function onChatted(msg, speaker)
 	if game:GetService("Players").ArbysChibkenEnabled then
 		if msg == "arbys chibken" then
 			local sound = Instance.new("Sound")
-			sound.SoundId = "rbxassetid://327"
+			sound.SoundId = "rbxassetid://256"
 			sound.Volume = 0.5
 			sound.Parent = character
 			sound:Play()
