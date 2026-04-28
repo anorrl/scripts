@@ -27,9 +27,4 @@ for _, v in pairs(workspace:GetDescendants()) do
 	end
 end
 
-for _, v in pairs(game:GetService("StarterGui"):GetChildren()) do
-	v:Remove()
-end
-
-
 return ThumbnailGenerator:Click(fileExtension, x, y, --[[hideSky = ]] false)
