@@ -1,6 +1,8 @@
-local isheadshot = {isheadshot}
-local isclothing = {isclothing}
-local userId = {placeId}
+local isHeadshot = {isHeadshot}
+local isClothing = {isClothing}
+local userId = {requestId}
+local is3D = {is3D}
+
 game:GetService("ContentProvider"):SetBaseUrl("http://{domain}/")
 game:GetService("ScriptContext").ScriptsDisabled = true
 game:GetService("Lighting").Outlines = false
@@ -8,15 +10,18 @@ game:GetService("Lighting").Outlines = false
 game:SetPlaceId(19) -- grace fuck you fix the gears
 
 local player = game:GetService("Players"):CreateLocalPlayer(0)
-if (isclothing == true) then
-	player.CharacterAppearance = "http://{domain}/Asset/CharacterFetch.ashx?assetId=" .. userId .. "&access={accesskey}"
-else
-	player.CharacterAppearance = "http://{domain}/Asset/CharacterFetch.ashx?userId=" .. userId
+
+local getterURL = "userId"
+if isClothing then
+	getterURL = "assetId"
 end
+
+player.CharacterAppearance = "http://{domain}/Asset/CharacterFetch.ashx?" .. getterURL .. "={requestId}"
+
 player:LoadCharacter(false)
 
-if (isheadshot == false) then
-	if (player.Character and isclothing == false) then
+if not isHeadshot then
+	if player.Character and not isClothing then
 		local backpack = player.Backpack:GetChildren()
 		local chosen = nil
 
@@ -52,4 +57,8 @@ else
 	workspace.CurrentCamera = Camera
 end
 
-return (game:GetService("ThumbnailGenerator"):Click("PNG", 420, 420, true))
+if is3D then
+	return game:GetService("ThumbnailGenerator"):Click("OBJ", 420, 420, true)
+else
+	return (game:GetService("ThumbnailGenerator"):Click("PNG", 420, 420, true))
+end

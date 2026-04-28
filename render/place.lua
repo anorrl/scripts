@@ -1,7 +1,7 @@
 -- Place v1.0.3
 -- added humanoid display remover and startergui remover (probably handled in the showdevgui boolean but oh well)
 
-local assetUrl, fileExtension, x, y, baseUrl, placeId, apiKey = "/asset/?id=", "PNG", 768, 432, "http://{domain}", {placeId}, "{accesskey}"
+local assetUrl, fileExtension, x, y, baseUrl, placeId = "/asset/?id=", "PNG", 768, 432, "http://{domain}", {requestId}
 
 local ThumbnailGenerator = game:GetService("ThumbnailGenerator")
 
@@ -13,7 +13,7 @@ end
 game:GetService("ScriptContext").ScriptsDisabled = true
 game:GetService("StarterGui").ShowDevelopmentGui = false
 
-game:Load(baseUrl .. assetUrl .. placeId .. "&access=" .. apiKey)
+game:Load(baseUrl .. assetUrl .. placeId)
 
 -- Do this after again loading the place file to ensure that these values aren't changed when the place file is loaded.
 game:GetService("ScriptContext").ScriptsDisabled = true

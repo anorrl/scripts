@@ -1,6 +1,6 @@
 -- Start Game Script Arguments
-local placeId, port, sleeptime, access, timeout, domain, libraryRegistrationScriptAssetID, universeId, protocol, jobId, testing =
-{placeId}, {port}, 10, "{accesskey}", 10, "{domain}", 37801172, {placeId}, "http://", "{jobId}", false
+local placeId, port, sleeptime, timeout, domain, libraryRegistrationScriptAssetID, universeId, protocol, jobId, testing =
+{requestId}, {port}, 10, 10, "{domain}", 37801172, {requestId}, "http://", "{jobId}", false
 
 -----------------------------------"CUSTOM" SHARED CODE----------------------------------
 local TeleportService = game:GetService("TeleportService")
@@ -114,7 +114,7 @@ local function waitForAccoutrement(character)
             break
         end
         wait(0.05)
-        tries = tries + 1
+        tries += 1
     end
 end
 
@@ -132,7 +132,7 @@ local function waitForClothing(character)
             break
         end
         wait(0.05)
-        tries = tries + 1
+        tries += 1
     end
 end
 -----------------------------------START GAME SHARED SCRIPT------------------------------
@@ -147,7 +147,7 @@ local whitelist = {
 }
 if domain~=nil and protocol ~= nil then
 	url = protocol .. domain
-	saveUrl = url .. "/Data/Upload.ashx?assetid=" .. placeId .. "&access=" .. access
+	saveUrl = url .. "/Data/Upload.ashx?assetid=" .. placeId
 end
 
 local scriptContext = game:GetService('ScriptContext')
@@ -237,7 +237,7 @@ if isCloudEdit then
 else
 	game.OnClose = function()
 		warn("Server is shutting down!")
-		game:HttpGet(url .. "/api/gameservers/close?jobID="..jobId .. "&access="..access)
+		game:HttpGet(url .. "/api/gameservers/close?jobID="..jobId)
 	end
 end
 
@@ -263,18 +263,17 @@ if url~=nil then
 		game:GetService("BadgeService"):SetAwardBadgeUrl(url .. "/assets/award-badge?userId=%d&badgeId=%d&placeId=%d")
 	end
 
-	if access ~= nil then
-		if not newBadgeUrlEnabled then
-			game:GetService("BadgeService"):SetAwardBadgeUrl(url .. "/Game/Badge/AwardBadge.ashx?UserID=%d&BadgeID=%d&PlaceID=%d")
-		end
-
-		game:GetService("BadgeService"):SetHasBadgeUrl(url .. "/Game/Badge/HasBadge.ashx?UserID=%d&BadgeID=%d")
-		game:GetService("BadgeService"):SetIsBadgeDisabledUrl(url .. "/Game/Badge/IsBadgeDisabled.ashx?BadgeID=%d&PlaceID=%d")
-
-		game:GetService("FriendService"):SetMakeFriendUrl(url .. "/Game/CreateFriend?firstUserId=%d&secondUserId=%d")
-		game:GetService("FriendService"):SetBreakFriendUrl(url .. "/Game/BreakFriend?firstUserId=%d&secondUserId=%d")
-		game:GetService("FriendService"):SetGetFriendsUrl(url .. "/Game/AreFriends?userId=%d")
+	if not newBadgeUrlEnabled then
+		game:GetService("BadgeService"):SetAwardBadgeUrl(url .. "/Game/Badge/AwardBadge.ashx?UserID=%d&BadgeID=%d&PlaceID=%d")
 	end
+
+	game:GetService("BadgeService"):SetHasBadgeUrl(url .. "/Game/Badge/HasBadge.ashx?UserID=%d&BadgeID=%d")
+	game:GetService("BadgeService"):SetIsBadgeDisabledUrl(url .. "/Game/Badge/IsBadgeDisabled.ashx?BadgeID=%d&PlaceID=%d")
+
+	game:GetService("FriendService"):SetMakeFriendUrl(url .. "/Game/CreateFriend?firstUserId=%d&secondUserId=%d")
+	game:GetService("FriendService"):SetBreakFriendUrl(url .. "/Game/BreakFriend?firstUserId=%d&secondUserId=%d")
+	game:GetService("FriendService"):SetGetFriendsUrl(url .. "/Game/AreFriends?userId=%d")
+
 	game:GetService("BadgeService"):SetIsBadgeLegalUrl("")
 	game:GetService("InsertService"):SetBaseSetsUrl(url .. "/Game/Tools/InsertAsset.ashx?nsets=10&type=base")
 	game:GetService("InsertService"):SetUserSetsUrl(url .. "/Game/Tools/InsertAsset.ashx?nsets=20&type=user&userid=%d")
@@ -288,11 +287,7 @@ if url~=nil then
 		pcall(function() loadfile(url .. "/Game/LoadPlaceInfo.ashx?PlaceId=" .. placeId)() end)
 	end
 	
-	pcall(function() 
-				if access then
-					loadfile(url .. "/Game/PlaceSpecificScript.ashx?PlaceId=" .. placeId .. "&access=" .. access)()
-				end
-			end)
+	pcall(function() loadfile(url .. "/Game/PlaceSpecificScript.ashx?PlaceId=" .. placeId)() end)
 end
 
 pcall(function() game:GetService("NetworkServer"):SetIsPlayerAuthenticationRequired(false) end)
@@ -301,7 +296,7 @@ settings().Diagnostics.LuaRamLimit = 0
 game:GetService("Players").PlayerAdded:connect(function(player)
 	shouldCountDown = false
 	
-	if url and access and placeId and player and player.userId then
+	if url and placeId and player and player.userId then
 		print("Player " .. player.userId .. " added")
 		local userid = string.gsub(tostring(player.userId), "%-", "")
 		userid = string.gsub(tostring(player.userId), "-", "")
@@ -320,6 +315,8 @@ game:GetService("Players").PlayerAdded:connect(function(player)
 				return player:Kick("You cannot join this server because this game is private.")
 			end
 		end
+		
+		-- the fuck?
 		local didTeleportIn = "False"
 		if player.TeleportedIn then didTeleportIn = "True" end
 		
@@ -327,7 +324,7 @@ game:GetService("Players").PlayerAdded:connect(function(player)
 			warn("Validating " .. player.Name)
 		end
 
-		local playerResult = game:HttpGet(url .. "/api/gameservers/validateplayer?jobID="..jobId .. "&access="..access.."&userID=" .. tostring(userid), true)
+		local playerResult = game:HttpGet(url .. "/api/gameservers/validateplayer?jobID="..jobId.."&userID=" .. tostring(userid), true)
 		
 		if playerResult ~= "OK" then
 			warn("Kicking " .. player.Name .. " because invalid")
@@ -337,6 +334,12 @@ game:GetService("Players").PlayerAdded:connect(function(player)
 		player.Chatted:connect(function(msg)
 			onChatted(msg, player)
 		end)
+		
+		if not player:FindFirstChild("HandleEmote") then
+			Instance.new("BindableEvent", player).Name = "HandleEmote"
+		end
+
+		
 		player.CharacterAdded:connect(function(character)
 			--[[player.CharacterAppearanceLoaded:wait()
             for _, accessory in ipairs(character:GetChildren()) do
@@ -430,12 +433,12 @@ game:GetService("Players").PlayerRemoving:connect(function(player)
 	local isTeleportingOut = "False"
 	if player.Teleported then isTeleportingOut = "True" end
 
-	if url and access and placeId and player and player.userId then
+	if url and placeId and player and player.userId then
 		print("Player " .. player.userId .. " leaving")	
 		if testing then
 			warn("Removing " .. player.Name .. " from database")
 		end
-		game:HttpGet(url .. "/api/gameservers/removeplayer?jobID="..jobId .. "&access="..access.."&userID=" .. tostring(player.userId))
+		game:HttpGet(url .. "/api/gameservers/removeplayer?jobID="..jobId.."&userID=" .. tostring(player.userId))
 		if #game:GetService("Players"):GetPlayers() == 0 then
 			shuttingDown = true
 			if isCloudEdit then
@@ -446,13 +449,13 @@ game:GetService("Players").PlayerRemoving:connect(function(player)
 			end
 			
 			warn("Server is being shutdown!")
-			game:HttpGet(url .. "/api/gameservers/close?jobID="..jobId .. "&access="..access)
+			game:HttpGet(url .. "/api/gameservers/close?jobID="..jobId)
 		end
 	end
 end)
 
 local onlyCallGameLoadWhenInRccWithAccessKey = newBadgeUrlEnabled
-if placeId ~= nil and url ~= nil and ((not onlyCallGameLoadWhenInRccWithAccessKey) or access ~= nil) then
+if placeId ~= nil and url ~= nil and not onlyCallGameLoadWhenInRccWithAccessKey then
 	-- yield so that file load happens in the heartbeat thread
 	wait()
 	
@@ -539,15 +542,18 @@ if not isCloudEdit then
 	
 	
 	pcall(function()
-		while wait(30) do
-			game:HttpGet("http://{domain}/api/gameservers/renewlease?jobID="..jobId .. "&access="..access)
+		while wait(25) do
+			print("renewing lease lalala")
+			game:HttpGet("http://{domain}/api/gameservers/renewlease?jobID="..jobId)
 		end
 	end)
 	
 	-- Heartbeat --
 	while wait(1) do
+		print(shouldCountDown)
 		if shouldCountDown then
-			countdownTimer = countdownTimer - 1
+			print(countdownTimer)
+			countdownTimer -= 1
 
 			if shouldCountDown and countdownTimer <= 0 then
 				warn("Server is being shutdown!")
@@ -557,17 +563,13 @@ if not isCloudEdit then
 					-- yield so that file save happens in the heartbeat thread
 					wait()
 				end
-				game:HttpGet(url .. "/api/gameservers/close?jobID="..jobId .. "&access="..access)
+				game:HttpGet(url .. "/api/gameservers/close?jobID="..jobId)
 				break
 			end
 		end
 		if not isCloudEdit and workspace.FilteringEnabled ~= FilteringEnabled then
 			warn("Something tried to change FilteringEnabled! Reverting...")
 			workspace.FilteringEnabled = FilteringEnabled
-		end
-		
-		if shuttingDown then
-			break
 		end
 	end
 
