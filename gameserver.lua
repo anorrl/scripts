@@ -43,16 +43,6 @@ local function onChatted(msg, speaker)
 		return
 	end
 	
-	if msg == "retro" and humanoid.Health > 0 then
-	humanoid.Health = 0
-
-	local sound = Instance.new("Sound")
-	sound.Parent = head
-	sound.SoundId = protocol .. domain .. "/asset/?id=" .. retroSound
-	wait(0.2)
-	sound:Play()
-end
-
 	if msg == "!!!reset" then
 		humanoid.Health = 0
 		return
@@ -79,6 +69,17 @@ end
 		wait(0.2)
 		sound:Play()
 	end
+	
+	if msg == "retro" and humanoid.Health > 0 then
+	humanoid.Health = 0
+
+	local sound = Instance.new("Sound")
+	sound.Parent = head
+	sound.SoundId = protocol .. domain .. "/asset/?id=" .. retroSound
+	wait(0.2)
+	sound:Play()
+ end
+
 
 	if game:GetService("Players").ArbysChibkenEnabled then
 		if msg == "arbys chibken" then
