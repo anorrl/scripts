@@ -72,7 +72,7 @@ local function onChatted(msg, speaker)
 	if game:GetService("Players").ArbysChibkenEnabled then
 		if msg == "arbys chibken" then
 			local sound = Instance.new("Sound")
-			sound.SoundId = "rbxassetid://256"
+			sound.SoundId = "arlassetid://256"
 			sound.Volume = 0.5
 			sound.Parent = character:WaitForChild("Head")
 			sound:Play()
@@ -219,7 +219,10 @@ if isCloudEdit then
 	local function periodicSave()
 		if doPeriodicSaves then
 			warn("Saving place!")
-			game:Save(saveUrl)
+			local response, result = pcall(function() game:Save(saveUrl) end)
+			if not response then
+				warn(result)
+			end
 			delay(delayBetweenSavesSeconds, periodicSave)
 		end
 	end
@@ -229,7 +232,10 @@ if isCloudEdit then
 	game.OnClose = function()
 		doPeriodicSaves = false
 		warn("Saving place!")
-		game:Save(saveUrl)
+		local response, result = pcall(function() game:Save(saveUrl) end)
+		if not response then
+			warn(result)
+		end
 		-- yield so that file save happens in the heartbeat thread
 		wait()
 	end
@@ -282,12 +288,12 @@ if url~=nil then
 	game:GetService("InsertService"):SetAssetVersionUrl(url .. "/Asset/?assetversionid=%d")
 	
 	if gameCode then
-		pcall(function() loadfile(url .. "/Game/LoadPlaceInfo.ashx?PlaceId=" .. placeId .. "&gameCode=" .. tostring(gameCode))() end)
+		pcall(function() loadfile(url .. "/Game/LoadPlaceInfo.slua?PlaceId=" .. placeId .. "&gameCode=" .. tostring(gameCode))() end)
 	else
-		pcall(function() loadfile(url .. "/Game/LoadPlaceInfo.ashx?PlaceId=" .. placeId)() end)
+		pcall(function() loadfile(url .. "/Game/LoadPlaceInfo.slua?PlaceId=" .. placeId)() end)
 	end
 	
-	pcall(function() loadfile(url .. "/Game/PlaceSpecificScript.ashx?PlaceId=" .. placeId)() end)
+	pcall(function() loadfile(url .. "/Game/PlaceSpecificScript.slua?PlaceId=" .. placeId)() end)
 end
 
 pcall(function() game:GetService("NetworkServer"):SetIsPlayerAuthenticationRequired(false) end)
@@ -328,6 +334,7 @@ game:GetService("Players").PlayerAdded:connect(function(player)
 		
 		if playerResult ~= "OK" then
 			warn("Kicking " .. player.Name .. " because invalid")
+			warn(playerResult)
 			player:Kick("This game has shut down")
 		end
 		
@@ -443,7 +450,10 @@ game:GetService("Players").PlayerRemoving:connect(function(player)
 			shuttingDown = true
 			if isCloudEdit then
 				warn("Saving place!")
-				game:Save(saveUrl)
+				local response, result = pcall(function() game:Save(saveUrl) end)
+				if not response then
+					warn(result)
+				end
 				-- yield so that file save happens in the heartbeat thread
 				wait()
 			end
@@ -455,7 +465,7 @@ game:GetService("Players").PlayerRemoving:connect(function(player)
 end)
 
 local onlyCallGameLoadWhenInRccWithAccessKey = newBadgeUrlEnabled
-if placeId ~= nil and url ~= nil and not onlyCallGameLoadWhenInRccWithAccessKey then
+if placeId ~= nil and url ~= nil then
 	-- yield so that file load happens in the heartbeat thread
 	wait()
 	
@@ -505,20 +515,20 @@ if not isCloudEdit then
 				emoteSounder:Stop()
 
 				local emoteSounds = { -- grace please consider taking lua classes
-					californiagurls = "rbxassetid://257",
-					dwyec = "rbxassetid://258",
-					caramelldansen = "rbxassetid://259",
-					awakening = "rbxassetid://261",
-					unlockit = "rbxassetid://260",
-					otsukare = "rbxassetid://262",
-					hakari = "rbxassetid://263",
-					mannrobics = "rbxassetid://264",
-					gangnam = "rbxassetid://265",
-					gmod = "rbxassetid://266",
-					jumpstyle = "rbxassetid://267",
-					awesomeface = "rbxassetid://268",
-					creeper = "rbxassetid://269",
-					rampage = "rbxassetid://275"
+					californiagurls = "arlassetid://257",
+					dwyec = "arlassetid://258",
+					caramelldansen = "arlassetid://259",
+					awakening = "arlassetid://261",
+					unlockit = "arlassetid://260",
+					otsukare = "arlassetid://262",
+					hakari = "arlassetid://263",
+					mannrobics = "arlassetid://264",
+					gangnam = "arlassetid://265",
+					gmod = "arlassetid://266",
+					jumpstyle = "arlassetid://267",
+					awesomeface = "arlassetid://268",
+					creeper = "arlassetid://269",
+					rampage = "arlassetid://275"
 				}
 
 				if state == "play" then
@@ -539,40 +549,75 @@ if not isCloudEdit then
 	-- filteringenabled warning
 
 	Game:GetService("RunService"):Run()
-	
-	
-	pcall(function()
-		while wait(25) do
-			print("renewing lease lalala")
-			game:HttpGet("http://{domain}/api/gameservers/renewlease?jobID="..jobId)
-		end
-	end)
-	
-	-- Heartbeat --
-	while wait(1) do
-		print(shouldCountDown)
-		if shouldCountDown then
-			print(countdownTimer)
-			countdownTimer -= 1
+else
+	Game:GetService("RunService"):Stop()
+end
 
-			if shouldCountDown and countdownTimer <= 0 then
-				warn("Server is being shutdown!")
-				if isCloudEdit then
-					warn("Saving place!")
-					game:Save(saveUrl)
-					-- yield so that file save happens in the heartbeat thread
+pcall(function()
+	while wait(25) do
+		print("renewing lease lalala")
+		game:HttpGet("http://{domain}/api/gameservers/renewlease?jobID="..jobId)
+	end
+end)
+
+if not isCloudEdit then
+	print("nnumber of workspaces ", #workspace:GetDescendants())
+	for _, v in pairs(workspace:GetDescendants()) do 
+		if v:IsA("Seat") then
+			print("found", v)
+			v.ChildAdded:connect(function(obj)
+				print("child added", obj)
+				if obj.Name ~= "SeatWeld" then return end 
+				local torso = obj.Part1
+				if not torso then return end
+				print("found torso")
+				local player = game.Players:GetPlayerFromCharacter(torso.Parent)
+				if not player then return end 
+				print("found player")
+				local character = player.Character
+				while obj.Parent and player.Parent and character.Parent and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 do 
 					wait()
-				end
-				game:HttpGet(url .. "/api/gameservers/close?jobID="..jobId)
-				break
-			end
+				end 
+			
+				v.Velocity = Vector3.new(0,0,0)
+				v.RotVelocity = Vector3.new(0,0,0)
+				if not (player.Parent and character.Parent) then return end 
+				print("ResetVelocity")
+				for _, v in pairs(character:GetChildren()) do
+					if v.className == "Part" then 
+						v.Velocity = Vector3.new(0,0,0)
+						v.RotVelocity = Vector3.new(0,0,0) 
+					end
+				end 
+			end)
 		end
-		if not isCloudEdit and workspace.FilteringEnabled ~= FilteringEnabled then
-			warn("Something tried to change FilteringEnabled! Reverting...")
-			workspace.FilteringEnabled = FilteringEnabled
+	end 
+end
+
+-- Heartbeat --
+while wait(1) do
+	print(shouldCountDown)
+	if shouldCountDown then
+		print(countdownTimer)
+		countdownTimer -= 1
+
+		if shouldCountDown and countdownTimer <= 0 then
+			warn("Server is being shutdown!")
+			if isCloudEdit then
+				warn("Saving place!")
+				local response, result = pcall(function() game:Save(saveUrl) end)
+				if not response then
+					warn(result)
+				end
+				-- yield so that file save happens in the heartbeat thread
+				wait()
+			end
+			game:HttpGet(url .. "/api/gameservers/close?jobID="..jobId)
+			break
 		end
 	end
-
-	
-
+	if not isCloudEdit and workspace.FilteringEnabled ~= FilteringEnabled then
+		warn("Something tried to change FilteringEnabled! Reverting...")
+		workspace.FilteringEnabled = FilteringEnabled
+	end
 end
