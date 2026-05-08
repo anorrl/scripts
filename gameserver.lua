@@ -21,8 +21,9 @@ local countdownTimer = 15
 
 local commands = {";ec", ";cock", ";raymonf", ";gage", ";minecraft", ";suicide", ";energycell", ";cancer", ";bleach", ";sex", ";kms", ";death", ";robloxsuckingpenis", ";korone", ";austiblox", ";pekora", ";liam", ";amir", ";brickplanet", ";polytoriacrashed", ";wm"}
 
+local retroSound = 453
 local elivSound = 255
-local ecSounds = {63,66,68,252,253,254}
+local ecSounds = {63,66,68,252,253,254,451,452}
 
 local function onChatted(msg, speaker)
 	msg = string.lower(msg)
@@ -41,7 +42,7 @@ local function onChatted(msg, speaker)
 		end)
 		return
 	end
-
+	
 	if msg == "!!!reset" then
 		humanoid.Health = 0
 		return
@@ -68,6 +69,17 @@ local function onChatted(msg, speaker)
 		wait(0.2)
 		sound:Play()
 	end
+	
+	if msg == "retro" and humanoid.Health > 0 then
+	humanoid.Health = 0
+
+	local sound = Instance.new("Sound")
+	sound.Parent = head
+	sound.SoundId = protocol .. domain .. "/asset/?id=" .. retroSound
+	wait(0.2)
+	sound:Play()
+ end
+
 
 	if game:GetService("Players").ArbysChibkenEnabled then
 		if msg == "arbys chibken" then
