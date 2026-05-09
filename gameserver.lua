@@ -1,6 +1,6 @@
 -- Start Game Script Arguments
 local placeId, port, sleeptime, timeout, domain, libraryRegistrationScriptAssetID, universeId, protocol, jobId, testing =
-{requestId}, {port}, 10, 10, "{domain}", 37801172, {requestId}, "http://", "{jobId}", false
+{requestId}, {port}, 10, 10, "{domain}", 37801172, {universeId}, "http://", "{jobId}", false
 
 -----------------------------------"CUSTOM" SHARED CODE----------------------------------
 local TeleportService = game:GetService("TeleportService")
