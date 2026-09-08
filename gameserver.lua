@@ -4,16 +4,19 @@
 -- - create api subdomain
 -- - make a GOOD logging system for this script in particular...
 -- - move every api request to HttpRbxApiService and POST. (web requires post!)
+-- - use close for closing jobs and terminate for terminating jobs...
+-- - more restructuring...
 
--- Start Game Script Arguments
-local placeId, port, sleeptime, timeout, domain, libraryRegistrationScriptAssetID, universeId, protocol, jobId, isCloudEdit, testing =
-{requestId}, {port}, 10, 10, "{domain}", 37801172, {universeId}, "https://", "{jobId}", {teamcreate}, false
+local placeId, port, sleeptime, timeout, domain, universeId, protocol, jobId, isCloudEdit, testing =
+{requestId}, {port}, 10, 10, "{domain}", {universeId}, "https://", "{jobId}", {teamcreate}, false
 
------------------------------------"CUSTOM" SHARED CODE----------------------------------
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local ApiService = game:GetService("HttpRbxApiService")
-local scriptContext = game:GetService('ScriptContext')
+local ScriptContext = game:GetService("ScriptContext")
+local InsertService = game:GetService("InsertService")
+
+game:GetService("ChangeHistoryService"):SetEnabled(false)
 
 settings().Network.UseInstancePacketCache = true
 settings().Network.UsePhysicsPacketCache = true
@@ -43,16 +46,16 @@ local retroSound = 453
 local elivSound = 255
 local ecSounds = {63,66,68,252,253,254,451,452}
 
+function str_starts_with(subject, start)
+	return subject:sub(1, #start) == start
+end
+
 -- PlayOnRemove?
 local function playStupidSound(id, target, volume)
 	local sound = Instance.new("Sound")
 	sound.Parent = head
+	if volume then sound.Volume = volume end
 	sound.SoundId = "arlassetid://" .. id
-	if not volume then
-		--sound.Volume = 0.5
-	else
-		sound.Volume = volume
-	end
 	wait()
 	sound:Play()
 end
@@ -62,7 +65,7 @@ local function onChatted(msg, speaker)
 
 	local character = speaker.Character
 	if not character then return end
-
+	
 	local humanoid = character:FindFirstChild("Humanoid")
 	local head = character:FindFirstChild("Head")
 	local torso = character:FindFirstChild("Torso")
@@ -70,75 +73,54 @@ local function onChatted(msg, speaker)
 
 	if msg == "!rejoin" then
 		spawn(function()
-			wait(0.2)
+			wait()
 			TeleportService:Teleport(game.PlaceId, speaker)
 		end)
 		return
 	end
 	
 	if humanoid.Health > 0 then
-		if msg == "!!!reset" then
-			humanoid.Health = 0
-			return
-		end
-		
-		for i = 1, #commands do
-			if msg == commands[i] then
+		if str_starts_with(msg, ";") then
+			if msg == ";eliv" then
 				humanoid.Health = 0
-				playStupidSound(ecSounds[math.random(1, #ecSounds), head)
+				playStupidSound(elivSound, head)
+			else
+				for i = 1, #commands do
+					if msg == commands[i] then
+						humanoid.Health = 0
+						playStupidSound(ecSounds[math.random(1, #ecSounds), head)
+					end
+				end
+			end
+		else
+			if msg == "!!!reset" then
+				humanoid.Health = 0
+			elseif msg == "retro" then
+				humanoid.Health = 0
+				playStupidSound(retroSound, head)
+			elseif msg == "arbys chibken" and Players.ArbysChibkenEnabled and torso then
+				playStupidSound(arbysChibkenSound, head, 0.5)
+				
+				wait(2)
+				humanoid.Health = 0
+				local explosion = Instance.new("Explosion")
+				explosion.Position = torso.Position
+				explosion.Parent = workspace
 			end
 		end
-		
-		if msg == ";eliv" then
-			humanoid.Health = 0
-			playStupidSound(elivSound, head)
-		elseif msg == "retro" then
-			humanoid.Health = 0
-			playStupidSound(retroSound, head)
-		end
-	end
-
-
-	if Players.ArbysChibkenEnabled and msg == "arbys chibken" and torso then
-		playStupidSound(arbysChibkenSound, head, 0.5)
-		
-		wait(2)
-		
-		local explosion = Instance.new("Explosion")
-		explosion.Position = torso.Position
-		explosion.Parent = workspace
 	end
 end
 
-Players.PlayerAdded:connect(function(player)
-	player.Chatted:connect(function(msg)
-		onChatted(msg, player)
-	end)
-end)
-
-if (placeId == 3724) then
-	warn("Testing enabled")
-	testing = true
-end
-
------------------------------------START GAME SHARED SCRIPT------------------------------
-
--- use groups instead?
-local whitelist = { 1, 43, 62 }
-
-
-pcall(function() scriptContext:AddStarterScript(libraryRegistrationScriptAssetID) end)
-scriptContext.ScriptsDisabled = true
-
+ScriptContext.ScriptsDisabled = true
 -- SetPlaceID(int placeID, bool anorrlPlace)
--- setting this to true assigns any loaded corescript to be the security of GameScriptInANORRLPlace_ (which allows ANORRLPlace permissions to be bypassed)
+-- setting this to true assigns any loaded corescript to be the security of GameScriptInANORRLPlace (which allows ANORRLPlace reflection items to be used)
 -- might fix the modules issue if anorrlplace is true?
 game:SetPlaceID(placeId, true)
+-- i forgot if the universe id is being set or not so YEAH.
 if universeId ~= nil then game:SetUniverseId(universeId) end
-game:GetService("ChangeHistoryService"):SetEnabled(false)
 
 -- establish this peer as the Server
-local ns = game:GetService("NetworkServer")
+local NetworkServer = game:GetService("NetworkServer")
 -- Configure CloudEdit saving after place has been loaded
 if isCloudEdit then
 	if testing then
@@ -169,7 +151,7 @@ if isCloudEdit then
 		-- yield so that file save happens in the heartbeat thread
 		wait()
 	end
-	ns:ConfigureAsCloudEditServer()
+	NetworkServer:ConfigureAsCloudEditServer()
 else
 	game.OnClose = function()
 		warn("Server is shutting down!")
@@ -183,8 +165,6 @@ end
 
 pcall(function() Players:SetAbuseReportUrl(url .. "/AbuseReport/InGameChatHandler.ashx") end)
 pcall(function() game:GetService("ScriptInformationProvider"):SetAssetUrl(url .. "/Asset/") end)
-
-
 
 if gameCode then
 	game:SetVIPServerId(tostring(gameCode))
@@ -203,119 +183,93 @@ game:GetService("FriendService"):SetMakeFriendUrl(url .. "/Game/CreateFriend?fir
 game:GetService("FriendService"):SetBreakFriendUrl(url .. "/Game/BreakFriend?firstUserId=%d&secondUserId=%d")
 game:GetService("FriendService"):SetGetFriendsUrl(url .. "/Game/AreFriends?userId=%d")
 
-game:GetService("InsertService"):SetBaseSetsUrl(url .. "/Game/Tools/InsertAsset.ashx?nsets=10&type=base")
-game:GetService("InsertService"):SetUserSetsUrl(url .. "/Game/Tools/InsertAsset.ashx?nsets=20&type=user&userid=%d")
-game:GetService("InsertService"):SetCollectionUrl(url .. "/Game/Tools/InsertAsset.ashx?sid=%d")
-game:GetService("InsertService"):SetAssetUrl(url .. "/asset/?id=%d")
-game:GetService("InsertService"):SetAssetVersionUrl(url .. "/asset/?assetversionid=%d")
+InsertService:SetAssetUrl(url .. "/asset/?id=%d")
+InsertService:SetAssetVersionUrl(url .. "/asset/?assetversionid=%d")
+InsertService:SetBaseSetsUrl(url .. "/Game/Tools/InsertAsset.ashx?nsets=10&type=base")
+InsertService:SetUserSetsUrl(url .. "/Game/Tools/InsertAsset.ashx?nsets=20&type=user&userid=%d")
+InsertService:SetCollectionUrl(url .. "/Game/Tools/InsertAsset.ashx?sid=%d")
 
 -- i think a reason this was originally in pcall was because of compatibility.
 -- source wise, there's no yielding or anything. it's just a boolean set with nothing else.
 -- requires proper clienttickets tho!
-ns:SetIsPlayerAuthenticationRequired(true)
+NetworkServer:SetIsPlayerAuthenticationRequired(true)
 
 Players.PlayerAdded:Connect(function(player)
+	if player.userId < 1 then
+		return player:Kick() -- fuck off much?
+	end
+	
+	-- why are we setting this?
+	player.CharacterAppearance = url .. "/Asset/CharacterFetch.ashx?userId=" .. player.userId .. "&placeId=" .. placeId
+	
+	local didTeleportIn = "false"
+	if player.TeleportedIn then didTeleportIn = "true" end
+	
+	if testing then
+		warn("Validating " .. player.Name)
+	end
+
+	-- rewrite with HttpRbxApiService
+	local playerResult = game:HttpGet(url .. "/server/"..jobId.."/validate/" .. tostring(userid) .. "?teleported=" .. didTeleportIn, true)
+	
+	if playerResult ~= "OK" then
+		if testing then
+			warn("Kicking " .. player.Name .. " because invalid")
+		end
+		return player:Kick("This game has shut down")
+	end
+	
+	print("Player " .. player.userId .. " added")
+	-- disable and reset timer if a player joins successfully
+	countdownTimer = startingTimer
 	shouldCountDown = false
 	
-	-- huh
-	if player and player.userId then
-		print("Player " .. player.userId .. " added")
-		
-		if player.userId < 1 then
-			return player:Kick() -- fuck off much?
-		end
-		
-		-- why are we setting this?
-		player.CharacterAppearance = url .. "/Asset/CharacterFetch.ashx?userId=" .. player.userId .. "&placeId=" .. placeId
-		
-		if testing then
-			local allowed = false
-			
-			for _, id in ipairs(whitelist) do
-				if player.UserId == id then
-					allowed = true
-					break
-				end
-			end
-			
-			if not allowed then
-				return player:Kick("You cannot join this server because this game is private.")
-			end
-		end
-		
-		local didTeleportIn = "false"
-		if player.TeleportedIn then didTeleportIn = "true" end
-		
-		if testing then
-			warn("Validating " .. player.Name)
-		end
-
-		-- rewrite with HttpRbxApiService
-		local playerResult = game:HttpGet(url .. "/server/"..jobId.."/validate/" .. tostring(userid) .. "?teleported=" .. didTeleportIn, true)
-		
-		if playerResult ~= "OK" then
-			if testing then
-				warn("Kicking " .. player.Name .. " because invalid")
-			end
-			return player:Kick("This game has shut down")
-		end
-		
-		-- reset timer if a player joins.
-		countdownTimer = startingTimer
-		
-		if not player:FindFirstChild("HandleEmote") then
-			Instance.new("BindableEvent", player).Name = "HandleEmote"
-		end
-		
-		-- player character stuff is fixed with FFlags...
-		--[[ SPECIFICALLY:
-						DFFlagUseStarterPlayer
-						DFFlagUseStarterPlayerCharacter
-						DFFlagUseStarterPlayerCharacterScripts
-						DFFlagUseStarterPlayerHumanoid
-		THESE MUST BE ENABLED! ]]
+	player.Chatted:connect(function(msg) onChatted(msg, player) end)
+	
+	if not player:FindFirstChild("HandleEmote") then
+		Instance.new("BindableEvent", player).Name = "HandleEmote"
 	end
+	
+	-- player character stuff is fixed with FFlags...
+	--[[
+		SPECIFICALLY:
+				DFFlagUseStarterPlayer
+				DFFlagUseStarterPlayerCharacter
+				DFFlagUseStarterPlayerCharacterScripts
+				DFFlagUseStarterPlayerHumanoid
+		THESE MUST BE ENABLED!
+	]]
 end)
 
 Players.PlayerRemoving:Connect(function(player)
 	local isTeleportingOut = "false"
 	if player.Teleported then isTeleportingOut = "true" end
 
-	print("Player " .. player.userId .. " leaving")	
+	print("Player " .. player.userId .. " leaving")
 	if testing then
 		warn("Removing " .. player.Name .. " from database")
 	end
 	game:HttpGet(url .. "/server/" .. jobId .. "/remove/" .. player.userId .. "?teleport="..isTeleportingOut)
 	
 	-- begin timer if the server is empty
-	shouldCountDown = #Players:GetPlayers() == 0
+	shouldCountDown = #Players:GetPlayers() == 0 --and not player.Teleported
 end)
 
 -- yield so that file load happens in the heartbeat thread
 wait()
-
 -- load the game
 game:Load("arlassetid://" .. placeId)
-
 -- Now start the connection
-ns:Start(port, sleeptime) 
+NetworkServer:Start(port, sleeptime) 
 
-if timeout then
-	scriptContext:SetTimeout(timeout)
-end
-scriptContext.ScriptsDisabled = false
+ScriptContext:SetTimeout(timeout)
+ScriptContext.ScriptsDisabled = false
 
 if not workspace.FilteringEnabled then
 	warn("This place doesn't use FilteringEnabled. This means your place is vulnerable to exploits. You should turn it on.")
 end
 
-if injectScriptAssetID and (injectScriptAssetID < 0) then
-	pcall(function() Game:LoadGame(injectScriptAssetID * -1) end)
-else
-	pcall(function() scriptContext:AddStarterScript(injectScriptAssetID) end)
-end
-
--- StartGame --
+-- Setup EmoteSounds --
 if not isCloudEdit then
 	
 	if Players.EmoteSoundsEnabled then
@@ -328,6 +282,7 @@ if not isCloudEdit then
 
 		emoteEvent.OnServerEvent:connect(function(player, emoteName, state)
 			if player.Character then
+				-- Implement EmoteSound (with seperate fmod channel)
 				local emoteSounder = player.Character:WaitForChild("Torso"):FindFirstChild("EmoteSounderEffect")
 				if not emoteSounder then
 					emoteSounder = Instance.new("Sound", player.Character:WaitForChild("Torso"))
@@ -337,7 +292,8 @@ if not isCloudEdit then
 				emoteSounder.Volume = 0.5
 				emoteSounder.Looped = true
 				emoteSounder:Stop()
-
+				
+				-- probably should move this to an api?
 				local emoteSounds = {
 					californiagurls = "arlassetid://257",
 					dwyec = "arlassetid://258",
@@ -375,23 +331,21 @@ else
 	game:GetService("RunService"):Stop()
 end
 
--- this is just for renewing the job
--- increment by one, if modulus 25 == 0 then reset
--- if reset, then renew.
-local timer = 0
-local firstLoop = true
+local renewSeconds = 25
+local function renewThread()
+	if not shuttingDown then
+		game:HttpGet(url .. "/server/" .. jobId .. "/renewlease")
+		delay(renewSeconds, renewThread)
+	end
+end
+delay(renewSeconds, renewThread)
 
 -- Heartbeat --
 while wait(1) do
-	if timer == 0 and not firstLoop then
-		game:HttpGet(url .. "/server/" .. jobId .. "/renewlease")
-	end
-
-	timer += 1
 	if shouldCountDown then
 		countdownTimer -= 1
-
 		if shouldCountDown and countdownTimer <= 0 and #Players:GetPlayers() == 0 then
+			shuttingDown = true
 			if testing then
 				warn("Server is being shutdown!")
 			end
@@ -410,7 +364,4 @@ while wait(1) do
 			break
 		end
 	end
-	
-	timer %= 25
-	if firstLoop then firstLoop = false end
 end
