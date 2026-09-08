@@ -1,29 +1,61 @@
+-- TODO:
+-- - add renewlease time to arguments
+-- - rename renewlease api to renew
+-- - create api subdomain
+-- - make a GOOD logging system for this script in particular...
+-- - move every api request to HttpRbxApiService and POST. (web requires post!)
+
 -- Start Game Script Arguments
-local placeId, port, sleeptime, timeout, domain, libraryRegistrationScriptAssetID, universeId, protocol, jobId, testing =
-{requestId}, {port}, 10, 10, "{domain}", 37801172, {universeId}, "http://", "{jobId}", false
+local placeId, port, sleeptime, timeout, domain, libraryRegistrationScriptAssetID, universeId, protocol, jobId, isCloudEdit, testing =
+{requestId}, {port}, 10, 10, "{domain}", 37801172, {universeId}, "https://", "{jobId}", {teamcreate}, false
 
 -----------------------------------"CUSTOM" SHARED CODE----------------------------------
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
+local ApiService = game:GetService("HttpRbxApiService")
+local scriptContext = game:GetService('ScriptContext')
 
-pcall(function() settings().Network.UseInstancePacketCache = true end)
-pcall(function() settings().Network.UsePhysicsPacketCache = true end)
-pcall(function() settings()["Task Scheduler"].PriorityMethod = Enum.PriorityMethod.AccumulatedError end)
-
+settings().Network.UseInstancePacketCache = true
+settings().Network.UsePhysicsPacketCache = true
+settings()["Task Scheduler"].PriorityMethod = Enum.PriorityMethod.AccumulatedError -- FIFO...
 settings().Network.PhysicsSend = Enum.PhysicsSendMethod.TopNErrors
 settings().Network.ExperimentalPhysicsEnabled = true
 settings().Network.WaitingForCharacterLogRate = 100
-pcall(function() settings().Diagnostics:LegacyScriptMode() end)
+settings().Diagnostics.LuaRamLimit = 0
+-- LegacyScriptMode was just an empty function (DebugSettings::noOpt)
+
+-- this will never be nil.
+local url = protocol .. domain
+local saveUrl = nil
+if isCloudEdit then
+	saveUrl = url .. "/Data/Upload.ashx?assetid=" .. placeId
+end
 
 local shuttingDown = false
 local shouldCountDown = true
-local countdownTimer = 15
+local startingTimer = 15
+local countdownTimer = startingTimer
 
 local commands = {";ec", ";cock", ";raymonf", ";gage", ";minecraft", ";suicide", ";energycell", ";cancer", ";bleach", ";sex", ";kms", ";death", ";robloxsuckingpenis", ";korone", ";austiblox", ";pekora", ";liam", ";amir", ";brickplanet", ";polytoriacrashed", ";wm"}
 
+local arbysChibkenSound = 256
 local retroSound = 453
 local elivSound = 255
 local ecSounds = {63,66,68,252,253,254,451,452}
+
+-- PlayOnRemove?
+local function playStupidSound(id, target, volume)
+	local sound = Instance.new("Sound")
+	sound.Parent = head
+	sound.SoundId = "arlassetid://" .. id
+	if not volume then
+		--sound.Volume = 0.5
+	else
+		sound.Volume = volume
+	end
+	wait()
+	sound:Play()
+end
 
 local function onChatted(msg, speaker)
 	msg = string.lower(msg)
@@ -33,6 +65,7 @@ local function onChatted(msg, speaker)
 
 	local humanoid = character:FindFirstChild("Humanoid")
 	local head = character:FindFirstChild("Head")
+	local torso = character:FindFirstChild("Torso")
 	if not humanoid or not head then return end
 
 	if msg == "!rejoin" then
@@ -43,61 +76,37 @@ local function onChatted(msg, speaker)
 		return
 	end
 	
-	if msg == "!!!reset" then
-		humanoid.Health = 0
-		return
-	end
-
-	for i = 1, #commands do
-		if msg == commands[i] and humanoid.Health > 0 then
+	if humanoid.Health > 0 then
+		if msg == "!!!reset" then
 			humanoid.Health = 0
-
-			local sound = Instance.new("Sound")
-			sound.Parent = head
-			sound.SoundId = protocol .. domain .. "/asset/?id=" .. ecSounds[math.random(1, #ecSounds)]
-			wait(0.2)
-			sound:Play()
+			return
 		end
-	end
-
-	if msg == ";eliv" and humanoid.Health > 0 then
-		humanoid.Health = 0
-
-		local sound = Instance.new("Sound")
-		sound.Parent = head
-		sound.SoundId = protocol .. domain .. "/asset/?id=" .. elivSound
-		wait(0.2)
-		sound:Play()
-	end
-	
-	if msg == "retro" and humanoid.Health > 0 then
-	humanoid.Health = 0
-
-	local sound = Instance.new("Sound")
-	sound.Parent = head
-	sound.SoundId = protocol .. domain .. "/asset/?id=" .. retroSound
-	wait(0.2)
-	sound:Play()
- end
-
-
-	if game:GetService("Players").ArbysChibkenEnabled then
-		if msg == "arbys chibken" then
-			local sound = Instance.new("Sound")
-			sound.SoundId = "arlassetid://256"
-			sound.Volume = 0.5
-			sound.Parent = character:WaitForChild("Head")
-			sound:Play()
-
-			wait(2)
-
-			local torso = character:FindFirstChild("Torso")
-			if torso then
-				local explosion = Instance.new("Explosion")
-				explosion.Position = torso.Position
-				explosion.Parent = workspace
+		
+		for i = 1, #commands do
+			if msg == commands[i] then
+				humanoid.Health = 0
+				playStupidSound(ecSounds[math.random(1, #ecSounds), head)
 			end
 		end
+		
+		if msg == ";eliv" then
+			humanoid.Health = 0
+			playStupidSound(elivSound, head)
+		elseif msg == "retro" then
+			humanoid.Health = 0
+			playStupidSound(retroSound, head)
+		end
+	end
+
+
+	if Players.ArbysChibkenEnabled and msg == "arbys chibken" and torso then
+		playStupidSound(arbysChibkenSound, head, 0.5)
+		
+		wait(2)
+		
+		local explosion = Instance.new("Explosion")
+		explosion.Position = torso.Position
+		explosion.Parent = workspace
 	end
 end
 
@@ -112,115 +121,24 @@ if (placeId == 3724) then
 	testing = true
 end
 
-local function waitForAccoutrement(character)
-    local tries = 0
-    while tries < 20 do
-        local hasAccoutrement = false
-        for _, child in ipairs(character:GetChildren()) do
-            if child:IsA("Accoutrement") then
-                hasAccoutrement = true
-                break
-            end
-        end
-        if hasAccoutrement then
-            break
-        end
-        wait(0.05)
-        tries += 1
-    end
-end
-
-local function waitForClothing(character)
-    local tries = 0
-    while tries < 20 do
-        local hasClothing = false
-        for _, child in ipairs(character:GetChildren()) do
-            if child:IsA("Shirt") or child:IsA("Pants") or child:IsA("ShirtGraphic") then
-                hasClothing = true
-                break
-            end
-        end
-        if hasClothing then
-            break
-        end
-        wait(0.05)
-        tries += 1
-    end
-end
 -----------------------------------START GAME SHARED SCRIPT------------------------------
 
-local assetId = placeId -- might be able to remove this now
-local url = nil
-local saveUrl = nil
-local whitelist = {
-	1,
-	43,
-	62
-}
-if domain~=nil and protocol ~= nil then
-	url = protocol .. domain
-	saveUrl = url .. "/Data/Upload.ashx?assetid=" .. placeId
-end
+-- use groups instead?
+local whitelist = { 1, 43, 62 }
 
-local scriptContext = game:GetService('ScriptContext')
+
 pcall(function() scriptContext:AddStarterScript(libraryRegistrationScriptAssetID) end)
 scriptContext.ScriptsDisabled = true
 
-game:SetPlaceID(assetId, false)
-pcall(function () if universeId ~= nil then game:SetUniverseId(universeId) end end)
+-- SetPlaceID(int placeID, bool anorrlPlace)
+-- setting this to true assigns any loaded corescript to be the security of GameScriptInANORRLPlace_ (which allows ANORRLPlace permissions to be bypassed)
+-- might fix the modules issue if anorrlplace is true?
+game:SetPlaceID(placeId, true)
+if universeId ~= nil then game:SetUniverseId(universeId) end
 game:GetService("ChangeHistoryService"):SetEnabled(false)
-
-function GetAsync(url)
-	url = HttpRbx .. url
-	local response, result = pcall(function()
-		game:HttpGet(url)
-	end)
-	
-	wait()
-	
-	if response then
-		return response
-	else
-		return warn(result)
-	end
-end
-
-function PostAsync(url, data, contentType)
-	contentType = contentType or "application/x-www-form-urlencoded"
-
-	if type(data) == "table" then
-		local str = ""
-		for k, v in pairs(data) do
-			if str ~= "" then
-				str = str .. "&"
-			end
-			str = str .. tostring(k) .. "=" .. tostring(v)
-		end
-		data = str
-	end
-
-	local ok, response = pcall(function()
-		return game:GetService("HttpRbxApiService"):PostAsync(url, data, contentType)
-	end)
-	
-	wait()
-
-	if ok and response and response ~= "" then
-		return response
-	else
-		if not ok then
-			warn(response)
-		elseif response == "" then
-			warn("Empty response returned")
-		end
-		return nil
-	end
-end
 
 -- establish this peer as the Server
 local ns = game:GetService("NetworkServer")
--- Detect cloud edit mode by checking bool from arbiter
-local isCloudEdit = {teamcreate}
 -- Configure CloudEdit saving after place has been loaded
 if isCloudEdit then
 	if testing then
@@ -255,70 +173,61 @@ if isCloudEdit then
 else
 	game.OnClose = function()
 		warn("Server is shutting down!")
-		game:HttpGet(url .. "/api/gameservers/close?jobID="..jobId)
+		game:HttpGet(url .. "/server/"..jobId.."/close")
 	end
 end
 
-local badgeUrlFlagExists, badgeUrlFlagValue = pcall(function () return settings():GetFFlag("NewBadgeServiceUrlEnabled") end)
-local newBadgeUrlEnabled = badgeUrlFlagExists and badgeUrlFlagValue
-if url~=nil then
-	if testing then
-		warn("Loading NetworkServer and data")
-	end
-	
-	pcall(function() game:GetService("Players"):SetAbuseReportUrl(url .. "/AbuseReport/InGameChatHandler.ashx") end)
-	pcall(function() game:GetService("ScriptInformationProvider"):SetAssetUrl(url .. "/Asset/") end)
-	pcall(function() game:GetService("ContentProvider"):SetBaseUrl(url .. "/") end)
-	pcall(function() game:GetService("Players"):SetChatFilterUrl(url .. "/Game/ChatFilter.ashx") end)
-	
-	if gameCode then
-		game:SetVIPServerId(tostring(gameCode))
-	end
-
-	game:GetService("BadgeService"):SetPlaceId(placeId)
-
-	if newBadgeUrlEnabled then
-		game:GetService("BadgeService"):SetAwardBadgeUrl(url .. "/assets/award-badge?userId=%d&badgeId=%d&placeId=%d")
-	end
-
-	if not newBadgeUrlEnabled then
-		game:GetService("BadgeService"):SetAwardBadgeUrl(url .. "/Game/Badge/AwardBadge.ashx?UserID=%d&BadgeID=%d&PlaceID=%d")
-	end
-
-	game:GetService("BadgeService"):SetHasBadgeUrl(url .. "/Game/Badge/HasBadge.ashx?UserID=%d&BadgeID=%d")
-	game:GetService("BadgeService"):SetIsBadgeDisabledUrl(url .. "/Game/Badge/IsBadgeDisabled.ashx?BadgeID=%d&PlaceID=%d")
-
-	game:GetService("FriendService"):SetMakeFriendUrl(url .. "/Game/CreateFriend?firstUserId=%d&secondUserId=%d")
-	game:GetService("FriendService"):SetBreakFriendUrl(url .. "/Game/BreakFriend?firstUserId=%d&secondUserId=%d")
-	game:GetService("FriendService"):SetGetFriendsUrl(url .. "/Game/AreFriends?userId=%d")
-
-	game:GetService("BadgeService"):SetIsBadgeLegalUrl("")
-	game:GetService("InsertService"):SetBaseSetsUrl(url .. "/Game/Tools/InsertAsset.ashx?nsets=10&type=base")
-	game:GetService("InsertService"):SetUserSetsUrl(url .. "/Game/Tools/InsertAsset.ashx?nsets=20&type=user&userid=%d")
-	game:GetService("InsertService"):SetCollectionUrl(url .. "/Game/Tools/InsertAsset.ashx?sid=%d")
-	game:GetService("InsertService"):SetAssetUrl(url .. "/Asset/?id=%d")
-	game:GetService("InsertService"):SetAssetVersionUrl(url .. "/Asset/?assetversionid=%d")
-	
-	if gameCode then
-		pcall(function() loadfile(url .. "/Game/LoadPlaceInfo.slua?PlaceId=" .. placeId .. "&gameCode=" .. tostring(gameCode))() end)
-	else
-		pcall(function() loadfile(url .. "/Game/LoadPlaceInfo.slua?PlaceId=" .. placeId)() end)
-	end
-	
-	pcall(function() loadfile(url .. "/Game/PlaceSpecificScript.slua?PlaceId=" .. placeId)() end)
+if testing then
+	warn("Loading NetworkServer and data")
 end
 
-pcall(function() game:GetService("NetworkServer"):SetIsPlayerAuthenticationRequired(false) end)
-settings().Diagnostics.LuaRamLimit = 0
+pcall(function() Players:SetAbuseReportUrl(url .. "/AbuseReport/InGameChatHandler.ashx") end)
+pcall(function() game:GetService("ScriptInformationProvider"):SetAssetUrl(url .. "/Asset/") end)
 
-game:GetService("Players").PlayerAdded:connect(function(player)
+
+
+if gameCode then
+	game:SetVIPServerId(tostring(gameCode))
+end
+Players:SetChatFilterUrl(url .. "/Game/ChatFilter.ashx")
+
+game:GetService("ContentProvider"):SetBaseUrl(url .. "/")
+
+game:GetService("BadgeService"):SetPlaceId(placeId)
+game:GetService("BadgeService"):SetIsBadgeLegalUrl("")
+game:GetService("BadgeService"):SetAwardBadgeUrl(url .. "/Game/Badge/AwardBadge.ashx?UserID=%d&BadgeID=%d&PlaceID=%d")
+game:GetService("BadgeService"):SetHasBadgeUrl(url .. "/Game/Badge/HasBadge.ashx?UserID=%d&BadgeID=%d")
+game:GetService("BadgeService"):SetIsBadgeDisabledUrl(url .. "/Game/Badge/IsBadgeDisabled.ashx?BadgeID=%d&PlaceID=%d")
+
+game:GetService("FriendService"):SetMakeFriendUrl(url .. "/Game/CreateFriend?firstUserId=%d&secondUserId=%d")
+game:GetService("FriendService"):SetBreakFriendUrl(url .. "/Game/BreakFriend?firstUserId=%d&secondUserId=%d")
+game:GetService("FriendService"):SetGetFriendsUrl(url .. "/Game/AreFriends?userId=%d")
+
+game:GetService("InsertService"):SetBaseSetsUrl(url .. "/Game/Tools/InsertAsset.ashx?nsets=10&type=base")
+game:GetService("InsertService"):SetUserSetsUrl(url .. "/Game/Tools/InsertAsset.ashx?nsets=20&type=user&userid=%d")
+game:GetService("InsertService"):SetCollectionUrl(url .. "/Game/Tools/InsertAsset.ashx?sid=%d")
+game:GetService("InsertService"):SetAssetUrl(url .. "/asset/?id=%d")
+game:GetService("InsertService"):SetAssetVersionUrl(url .. "/asset/?assetversionid=%d")
+
+-- i think a reason this was originally in pcall was because of compatibility.
+-- source wise, there's no yielding or anything. it's just a boolean set with nothing else.
+-- requires proper clienttickets tho!
+ns:SetIsPlayerAuthenticationRequired(true)
+
+Players.PlayerAdded:Connect(function(player)
 	shouldCountDown = false
 	
-	if url and placeId and player and player.userId then
+	-- huh
+	if player and player.userId then
 		print("Player " .. player.userId .. " added")
-		local userid = string.gsub(tostring(player.userId), "%-", "")
-		userid = string.gsub(tostring(player.userId), "-", "")
-		player.CharacterAppearance = "http://{domain}/Asset/CharacterFetch.ashx?userId=" .. userid .. "&placeId=" .. placeId
+		
+		if player.userId < 1 then
+			return player:Kick() -- fuck off much?
+		end
+		
+		-- why are we setting this?
+		player.CharacterAppearance = url .. "/Asset/CharacterFetch.ashx?userId=" .. player.userId .. "&placeId=" .. placeId
+		
 		if testing then
 			local allowed = false
 			
@@ -334,156 +243,59 @@ game:GetService("Players").PlayerAdded:connect(function(player)
 			end
 		end
 		
-		-- the fuck?
-		local didTeleportIn = "False"
-		if player.TeleportedIn then didTeleportIn = "True" end
+		local didTeleportIn = "false"
+		if player.TeleportedIn then didTeleportIn = "true" end
 		
 		if testing then
 			warn("Validating " .. player.Name)
 		end
 
-		local playerResult = game:HttpGet(url .. "/api/gameservers/validateplayer?jobID="..jobId.."&userID=" .. tostring(userid), true)
+		-- rewrite with HttpRbxApiService
+		local playerResult = game:HttpGet(url .. "/server/"..jobId.."/validate/" .. tostring(userid) .. "?teleported=" .. didTeleportIn, true)
 		
 		if playerResult ~= "OK" then
-			warn("Kicking " .. player.Name .. " because invalid")
-			warn(playerResult)
-			player:Kick("This game has shut down")
+			if testing then
+				warn("Kicking " .. player.Name .. " because invalid")
+			end
+			return player:Kick("This game has shut down")
 		end
 		
-		player.Chatted:connect(function(msg)
-			onChatted(msg, player)
-		end)
+		-- reset timer if a player joins.
+		countdownTimer = startingTimer
 		
 		if not player:FindFirstChild("HandleEmote") then
 			Instance.new("BindableEvent", player).Name = "HandleEmote"
 		end
-
 		
-		player.CharacterAdded:connect(function(character)
-			--[[player.CharacterAppearanceLoaded:wait()
-            for _, accessory in ipairs(character:GetChildren()) do
-                if accessory:IsA("Accoutrement") then
-                    local success, reason = _G.validateHat({accessory})
-                    if not success then
-                        warn("Kicking " .. player.Name .. " due to invalidation: " .. reason)
-                        player:Kick("This game has shut down")
-                        return
-                    else
-						if testing then
-							print(player.Name .. " passed validation")
-						end
-					end
-                end
-            end
-			spawn(function()
-					waitForAccoutrement(character)
-					for _, accessory in ipairs(character:GetChildren()) do
-						if accessory:IsA("Accoutrement") then
-							local success, reason = _G.validateHat({accessory})
-							if not success then
-								warn("Kicking " .. player.Name .. " due to invalid hat: " .. reason)
-								player:Kick("This game has shut down")
-								return
-							end
-						end
-					end
-					waitForClothing(character)
-
-						for _, clothing in ipairs(character:GetChildren()) do
-							if clothing:IsA("Shirt") or clothing:IsA("Pants") or clothing:IsA("ShirtGraphic") then
-								local success, reason = _G.validateClothing({clothing})
-								if not success then
-									warn("Kicking " .. player.Name .. " due to invalid clothing: " .. reason)
-									player:Kick("This game has shut down")
-									return
-								end
-							end
-						end
-						if testing then
-							warn(player.Name .. " passed validation")
-						end
-				end)]]
-			
-			local starterPlayer = game:GetService("StarterPlayer")
-
-			local starterCharacter = starterPlayer:FindFirstChild("StarterCharacter")
-			local folders = starterPlayer:WaitForChild("StarterCharacterScripts")
-
-			local soundScript = character:WaitForChild("Sound")
-
-			if folders:FindFirstChild("Sound") then
-				soundScript:Remove()
-			end
-
-			local animateScript = character:WaitForChild("Animate")
-
-			if folders:FindFirstChild("Animate") then
-				animateScript:Remove()
-			end
-
-			for _, v in pairs(folders:GetChildren()) do
-				v:Clone().Parent = character
-			end
-
-			starterCharacter = false
-
-			if starterCharacter then
-				for _, v in pairs(character:GetChildren()) do
-					if v.Name ~= "HumanoidRootPart" and not v:IsA("LocalScript") and not v:IsA("Script") and not v:IsA("BasePart") and not v:IsA("Humanoid") then
-						v:Remove()
-					end
-				end
-				for _, v in pairs(starterCharacter:GetChildren()) do
-					
-					if v.Name ~= "HumanoidRootPart" and not v:IsA("BasePart") and not v:IsA("Humanoid") then
-						v:Clone().Parent = character
-					end
-				end
-			end
-			
-			if game:GetService("Players").EmoteSoundsEnabled then
-				Instance.new("Sound", character:WaitForChild("Torso")).Name = "EmoteSounderEffect"
-			end
-		end)
+		-- player character stuff is fixed with FFlags...
+		--[[ SPECIFICALLY:
+						DFFlagUseStarterPlayer
+						DFFlagUseStarterPlayerCharacter
+						DFFlagUseStarterPlayerCharacterScripts
+						DFFlagUseStarterPlayerHumanoid
+		THESE MUST BE ENABLED! ]]
 	end
 end)
 
-game:GetService("Players").PlayerRemoving:connect(function(player)
-	local isTeleportingOut = "False"
-	if player.Teleported then isTeleportingOut = "True" end
+Players.PlayerRemoving:Connect(function(player)
+	local isTeleportingOut = "false"
+	if player.Teleported then isTeleportingOut = "true" end
 
-	if url and placeId and player and player.userId then
-		print("Player " .. player.userId .. " leaving")	
-		if testing then
-			warn("Removing " .. player.Name .. " from database")
-		end
-		game:HttpGet(url .. "/api/gameservers/removeplayer?jobID="..jobId.."&userID=" .. tostring(player.userId))
-		if #game:GetService("Players"):GetPlayers() == 0 then
-			shuttingDown = true
-			if isCloudEdit then
-				warn("Saving place!")
-				local response, result = pcall(function() game:Save(saveUrl) end)
-				if not response then
-					warn(result)
-				end
-				-- yield so that file save happens in the heartbeat thread
-				wait()
-			end
-			
-			warn("Server is being shutdown!")
-			game:HttpGet(url .. "/api/gameservers/close?jobID="..jobId)
-		end
+	print("Player " .. player.userId .. " leaving")	
+	if testing then
+		warn("Removing " .. player.Name .. " from database")
 	end
-end)
-
-local onlyCallGameLoadWhenInRccWithAccessKey = newBadgeUrlEnabled
-if placeId ~= nil and url ~= nil then
-	-- yield so that file load happens in the heartbeat thread
-	wait()
+	game:HttpGet(url .. "/server/" .. jobId .. "/remove/" .. player.userId .. "?teleport="..isTeleportingOut)
 	
-	-- load the game
-	game:Load(url .. "/asset/?id=" .. placeId)
-end
+	-- begin timer if the server is empty
+	shouldCountDown = #Players:GetPlayers() == 0
+end)
+
+-- yield so that file load happens in the heartbeat thread
+wait()
+
+-- load the game
+game:Load("arlassetid://" .. placeId)
 
 -- Now start the connection
 ns:Start(port, sleeptime) 
@@ -493,21 +305,21 @@ if timeout then
 end
 scriptContext.ScriptsDisabled = false
 
--- FilteringEnabled Detection
-local FilteringEnabled = workspace.FilteringEnabled
-if not FilteringEnabled then
+if not workspace.FilteringEnabled then
 	warn("This place doesn't use FilteringEnabled. This means your place is vulnerable to exploits. You should turn it on.")
+end
+
+if injectScriptAssetID and (injectScriptAssetID < 0) then
+	pcall(function() Game:LoadGame(injectScriptAssetID * -1) end)
+else
+	pcall(function() scriptContext:AddStarterScript(injectScriptAssetID) end)
 end
 
 -- StartGame --
 if not isCloudEdit then
-	if injectScriptAssetID and (injectScriptAssetID < 0) then
-		pcall(function() Game:LoadGame(injectScriptAssetID * -1) end)
-	else
-		pcall(function() Game:GetService("ScriptContext"):AddStarterScript(injectScriptAssetID) end)
-	end
 	
-	if game:GetService("Players").EmoteSoundsEnabled then
+	if Players.EmoteSoundsEnabled then
+		-- this could be done better...
 		local emoteEvent = game:GetService("ReplicatedStorage"):FindFirstChild("ANORRLEMOTEEVENTERTHING")
 		if not emoteEvent then
 			emoteEvent = Instance.new("RemoteEvent", game:GetService("ReplicatedStorage"))
@@ -526,7 +338,7 @@ if not isCloudEdit then
 				emoteSounder.Looped = true
 				emoteSounder:Stop()
 
-				local emoteSounds = { -- grace please consider taking lua classes
+				local emoteSounds = {
 					californiagurls = "arlassetid://257",
 					dwyec = "arlassetid://258",
 					caramelldansen = "arlassetid://259",
@@ -542,7 +354,7 @@ if not isCloudEdit then
 					creeper = "arlassetid://269",
 					rampage = "arlassetid://275"
 				}
-
+				-- no else statement???
 				if state == "play" then
 					local soundId = emoteSounds[emoteName]
 
@@ -557,66 +369,36 @@ if not isCloudEdit then
 			end
 		end)
 	end
-	
-	-- filteringenabled warning
 
-	Game:GetService("RunService"):Run()
+	game:GetService("RunService"):Run()
 else
-	Game:GetService("RunService"):Stop()
+	game:GetService("RunService"):Stop()
 end
 
-pcall(function()
-	while wait(25) do
-		print("renewing lease lalala")
-		game:HttpGet("http://{domain}/api/gameservers/renewlease?jobID="..jobId)
-	end
-end)
-
-if not isCloudEdit then
-	print("nnumber of workspaces ", #workspace:GetDescendants())
-	for _, v in pairs(workspace:GetDescendants()) do 
-		if v:IsA("Seat") then
-			print("found", v)
-			v.ChildAdded:connect(function(obj)
-				print("child added", obj)
-				if obj.Name ~= "SeatWeld" then return end 
-				local torso = obj.Part1
-				if not torso then return end
-				print("found torso")
-				local player = game.Players:GetPlayerFromCharacter(torso.Parent)
-				if not player then return end 
-				print("found player")
-				local character = player.Character
-				while obj.Parent and player.Parent and character.Parent and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 do 
-					wait()
-				end 
-			
-				v.Velocity = Vector3.new(0,0,0)
-				v.RotVelocity = Vector3.new(0,0,0)
-				if not (player.Parent and character.Parent) then return end 
-				print("ResetVelocity")
-				for _, v in pairs(character:GetChildren()) do
-					if v.className == "Part" then 
-						v.Velocity = Vector3.new(0,0,0)
-						v.RotVelocity = Vector3.new(0,0,0) 
-					end
-				end 
-			end)
-		end
-	end 
-end
+-- this is just for renewing the job
+-- increment by one, if modulus 25 == 0 then reset
+-- if reset, then renew.
+local timer = 0
+local firstLoop = true
 
 -- Heartbeat --
 while wait(1) do
-	print(shouldCountDown)
+	if timer == 0 and not firstLoop then
+		game:HttpGet(url .. "/server/" .. jobId .. "/renewlease")
+	end
+
+	timer += 1
 	if shouldCountDown then
-		print(countdownTimer)
 		countdownTimer -= 1
 
-		if shouldCountDown and countdownTimer <= 0 then
-			warn("Server is being shutdown!")
+		if shouldCountDown and countdownTimer <= 0 and #Players:GetPlayers() == 0 then
+			if testing then
+				warn("Server is being shutdown!")
+			end
 			if isCloudEdit then
-				warn("Saving place!")
+				if testing then
+					warn("Saving place!")
+				end
 				local response, result = pcall(function() game:Save(saveUrl) end)
 				if not response then
 					warn(result)
@@ -624,12 +406,11 @@ while wait(1) do
 				-- yield so that file save happens in the heartbeat thread
 				wait()
 			end
-			game:HttpGet(url .. "/api/gameservers/close?jobID="..jobId)
+			game:HttpGet(url .. "/server/"..jobId.."/close")
 			break
 		end
 	end
-	if not isCloudEdit and workspace.FilteringEnabled ~= FilteringEnabled then
-		warn("Something tried to change FilteringEnabled! Reverting...")
-		workspace.FilteringEnabled = FilteringEnabled
-	end
+	
+	timer %= 25
+	if firstLoop then firstLoop = false end
 end
