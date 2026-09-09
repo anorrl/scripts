@@ -7,9 +7,13 @@
 - use close for closing jobs and terminate for terminating jobs...
 - rework some server apis to use JSON.
 - rework api formatting, just the url.
+
 ### notes
+<hr>
 #### StarterPlayer
-  THESE DYNAMIC FAST FLAGS MUST BE ENABLED FOR STARTERPLAYER STUFF!
+
+**THESE DYNAMIC FAST FLAGS ON BOTH ACC AND CLIENT MUST BE ENABLED FOR STARTERPLAYER STUFF!**
+
 | Flags                                  | Value |
 | -------------------------------------  | ----- |
 |	DFFlagUseStarterPlayer                 | `True` |
